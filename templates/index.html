@@ -1,0 +1,10 @@
+<form method="post">
+     {% csrf_token %}
+    <label for="your_name">Request body: </label>
+    <textarea id="request_body" name="request_body" rows="10" cols="45">{{ request_body }}</textarea>
+    {% if original_site_data %}
+        <iframe srcdoc="{{original_site_data}}"></iframe>
+        <iframe src="{{ request_body.url }}"></iframe>
+    {% endif %}
+    <input type="submit" value="OK">
+</form>
