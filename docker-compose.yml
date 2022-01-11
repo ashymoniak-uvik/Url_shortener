@@ -1,0 +1,17 @@
+version: '3.9'
+
+x-prebuild: &pre-build
+  build: .
+
+  volumes:
+    - .db_data/db.sqlite3:/app/.db_data/db.sqlite3
+
+services:
+
+  web:
+    <<: *pre-build
+    command: bash -c "python manage.py migrate --no-input --settings=configs.settings &&
+      python manage.py runserver 0.0.0.0:8000 --settings=configs.settings"
+
+    ports:
+      - "127.0.0.1:8000:8000"

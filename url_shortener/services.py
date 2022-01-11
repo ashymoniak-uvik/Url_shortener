@@ -8,7 +8,8 @@ import validators as validators
 from django.forms import Form
 from django.http import HttpRequest
 
-from url_shortener.models import ShortenedURL
+from url_shortener.models import ShortenedURL, IpAddress
+from url_normalize import url_normalize
 
 
 def get_context(form: Form, request: HttpRequest) -> dict:
@@ -95,7 +96,7 @@ def _get_url_from_body(request_body: str) -> tuple:
         if isinstance(body, dict):
             if "url" in body:
                 if validators.url(body["url"]):
-                    return None, body["url"]
+                    return None, url_normalize(body["url"])
                 else:
                     return error_message["incorrect_url"], None
             return error_message["keyword_error"], None
@@ -121,17 +122,38 @@ def _validate_shorten_url(request, url: str, slug: str) -> tuple:
             return None, "Incorrect 'url' is provided", None
 
     else:
-        return _update_or_create_shorten_url(slug, url)
+        return _update_or_create_shorten_url(request, slug, url)
 
 
-def _update_or_create_shorten_url(slug: str, url: str) -> tuple:
+def _update_or_create_shorten_url(request: HttpRequest,
+                                  slug: str, url: str) -> tuple:
     """
     This function is responsible for creation or updating the shortened url
     object
     """
+    ip_address = _get_client_ip(request)
     url_obj, created = ShortenedURL.objects.get_or_create(long_url=url)
     if created:
         url_obj.short_url = slug
-    url_obj.counter += 1
+
+    if not url_obj.ip_address.filter(name=ip_address).exists():
+        IpAddress.objects.create(name=ip_address, shorten_url=url_obj)
+        url_obj.counter += 1
+
     url_obj.save()
     return url_obj, None, None
+
+
+def _get_client_ip(request: HttpRequest) -> str:
+    """
+    This function is used for retrieving the IP Address from the request
+    """
+
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(",")[-1].strip()
+    elif request.META.get("HTTP_X_REAL_IP"):
+        ip = request.META.get("HTTP_X_REAL_IP")
+    else:
+        ip = request.META.get("REMOTE_ADDR")
+    return ip

@@ -9,5 +9,22 @@ class ShortenedURL(models.Model):
     counter = models.IntegerField(default=0)
 
     class Meta:
-        verbose_name_plural = 'Shortened URLs'
-        verbose_name = 'Shortened URL'
+        verbose_name_plural = "Shortened URLs"
+        verbose_name = "Shortened URL"
+
+    def __str__(self):
+        return str(self.long_url)
+
+
+class IpAddress(models.Model):
+    name = models.CharField(max_length=100, blank=True, unique=True)
+    shorten_url = models.ForeignKey(
+        ShortenedURL, on_delete=models.CASCADE, related_name="ip_address"
+    )
+
+    def __str__(self):
+        return str(self.name)
+
+    class Meta:
+        verbose_name_plural = "IP Addresses"
+        verbose_name = "IP Address"

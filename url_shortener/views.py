@@ -1,3 +1,5 @@
+import json
+
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 
@@ -15,6 +17,6 @@ def shorten_url(request: HttpRequest) -> HttpResponse:
     else:
         form = URLForm()
 
-    context = {"form": form, "data": ""}
+    context = {"form": form, "request_body": json.dumps({"url": ""}, indent=4)}
 
     return render(request, "index.html", context)
